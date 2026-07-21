@@ -1,0 +1,267 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                   PAYMENT API - QUICK START FOR FRONTEND                    ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ API BASE URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   http://localhost:8080/api
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ COMPLETE PAYMENT FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: PLACE ORDER                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ POST /api/orders/{userId}                                                  │
+│                                                                             │
+│ REQUEST:                                                                    │
+│ {                                                                           │
+│   "addressId": 789,                                                        │
+│   "paymentMethod": "RAZORPAY"                                              │
+│ }                                                                           │
+│                                                                             │
+│ RESPONSE:                                                                   │
+│ {                                                                           │
+│   "orderId": 456,           ← EXTRACT THIS                                │
+│   "orderStatus": "PLACED",                                                │
+│   "paymentStatus": "PENDING",                                             │
+│   ...                                                                      │
+│ }                                                                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: PROCESS PAYMENT                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ POST /api/payments/                                                        │
+│                                                                             │
+│ REQUEST:                                                                    │
+│ {                                                                           │
+│   "orderId": 456,                                                          │
+│   "paymentMethod": "RAZORPAY"                                              │
+│ }                                                                           │
+│                                                                             │
+│ RESPONSE:                                                                   │
+│ {                                                                           │
+│   "paymentId": 101,                                                        │
+│   "amount": 1050.00,                                                       │
+│   "paymentStatus": "PENDING",                                              │
+│   "gatewayOrderId": "order_xyz123",    ← EXTRACT THIS FOR RAZORPAY      │
+│   ...                                                                      │
+│ }                                                                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: SHOW RAZORPAY CHECKOUT                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Use gatewayOrderId from Step 2 to open Razorpay modal                     │
+│                                                                             │
+│ const options = {                                                           │
+│   key: 'YOUR_PUBLIC_KEY',                                                  │
+│   order_id: 'order_xyz123',    ← From Step 2                             │
+│   amount: 105000,              ← amount * 100                             │
+│   handler: function(response) { ... }                                      │
+│ };                                                                          │
+│ const rzp = new Razorpay(options);                                         │
+│ rzp.open();                                                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: VERIFY PAYMENT                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ POST /api/payments/razorpay/verify                                         │
+│                                                                             │
+│ REQUEST:                                                                    │
+│ {                                                                           │
+│   "razorpayOrderId": "order_xyz123",       ← From Razorpay response      │
+│   "razorpayPaymentId": "pay_abc456",       ← From Razorpay response      │
+│   "razorpaySignature": "9ef4d..."          ← From Razorpay response      │
+│ }                                                                           │
+│                                                                             │
+│ RESPONSE:                                                                   │
+│ {                                                                           │
+│   "paymentId": 101,                                                        │
+│   "amount": 1050.00,                                                       │
+│   "paymentStatus": "PAID",     ← CHECK THIS                               │
+│   "paidAt": "2026-07-19T11:24:35",                                        │
+│   ...                                                                      │
+│ }                                                                           │
+│                                                                             │
+│ ✅ IF paymentStatus === "PAID" → Show Success                             │
+│ ❌ IF Different Status → Show Error                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ REQUEST FIELD DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Place Order
+────────────────────
+  addressId      : Long   | Shipping address ID (user has multiple)
+  paymentMethod  : String | "RAZORPAY" (primary), or "CREDIT_CARD", "UPI"
+
+Step 2: Process Payment
+──────────────────────────
+  orderId        : Long   | Order ID from Step 1
+  paymentMethod  : String | "RAZORPAY"
+
+Step 3: Verify Payment
+──────────────────────
+  razorpayOrderId     : String | Order ID from Razorpay response
+  razorpayPaymentId   : String | Payment ID from Razorpay response
+  razorpaySignature   : String | HMAC signature from Razorpay
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ RESPONSE FIELD DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order Response (Step 1):
+───────────────────────
+  orderId       : Long      | Order ID (primary key)
+  productId     : Long      | Product ID
+  productName   : String    | Product name
+  quantity      : Integer   | Quantity ordered
+  price         : Double    | Unit price
+  totalPrice    : Double    | Total price for item
+  orderStatus   : String    | "PLACED", "CONFIRMED", "SHIPPED", "DELIVERED"
+  paymentStatus : String    | "PENDING", "PAID"
+  orderedAt     : DateTime  | ISO 8601 format
+
+Payment Response (Steps 2 & 4):
+───────────────────────────────
+  paymentId       : Long      | Payment ID (primary key)
+  transactionId   : String    | Razorpay Order/Payment ID
+  amount          : Double    | Amount in INR (e.g., 1050.00)
+  paymentStatus   : String    | "PENDING", "PAID", "FAILED", "REFUNDED"
+  paidAt          : DateTime  | ISO 8601 format (null if PENDING)
+  paymentGateway  : String    | "RAZORPAY"
+  gatewayOrderId  : String    | Razorpay order reference
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STATUS VALUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order Status:
+─────────────
+  PENDING    → Order awaiting payment
+  PLACED     → Order just created
+  CONFIRMED  → Payment confirmed
+  SHIPPED    → Dispatched
+  DELIVERED  → Delivered to customer
+  CANCELLED  → Order cancelled
+  FAILED     → Order creation failed
+  RETURNED   → Order returned
+
+Payment Status:
+───────────────
+  PENDING    → Awaiting payment (for async gateways like Razorpay)
+  PAID       → Payment successful ✅
+  SUCCESS    → Alternative success status
+  FAILED     → Payment failed ❌
+  REFUNDED   → Money refunded
+  CANCELLED  → Payment cancelled
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CRITICAL NOTES FOR FRONTEND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ DO:
+  • Send Content-Type: application/json
+  • Multiply amount by 100 for Razorpay (convert to paise)
+  • Extract gatewayOrderId from Step 2 response
+  • Verify payment on backend (Step 4)
+  • Check paymentStatus === "PAID" after verification
+  • Clear cart only after successful payment
+  • Store .env variables for API keys
+
+❌ DON'T:
+  • Never expose Razorpay secret key
+  • Never skip payment verification
+  • Don't trust frontend payment status alone
+  • Don't hardcode API URLs or keys
+  • Don't store payment details in localStorage
+  • Don't skip error handling
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ COMMON ERRORS & SOLUTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Error: "Order not found"
+  → Cause: Invalid orderId in Step 2
+  → Fix: Verify orderId from Step 1
+
+Error: "Order is already paid"
+  → Cause: Attempting payment twice
+  → Fix: Check order paymentStatus before Step 2
+
+Error: "Cart is empty"
+  → Cause: No items in cart
+  → Fix: User must add items first
+
+Error: "Invalid Razorpay signature"
+  → Cause: Wrong API keys or tampered data
+  → Fix: Verify Razorpay public key is correct
+
+Error: "Address not found"
+  → Cause: Invalid addressId
+  → Fix: Let user select valid address
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ENVIRONMENT CONFIGURATION (.env)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REACT_APP_API_BASE_URL=http://localhost:8080/api
+REACT_APP_RAZORPAY_KEY=YOUR_PUBLIC_KEY_HERE
+
+Usage:
+  const API_URL = process.env.REACT_APP_API_BASE_URL;
+  const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ DOCUMENTATION FILES AVAILABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. PAYMENT_API_SPECIFICATION.md
+     → Complete API spec with all endpoints
+
+  2. FRONTEND_PAYMENT_INTEGRATION_GUIDE.md
+     → Full code examples and implementation guide
+
+  3. PAYMENT_API_SUMMARY.md
+     → This summary in markdown
+
+  4. PAYMENT_API_QUICK_START.txt
+     → This file (quick reference)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ READY TO BUILD? START HERE!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Read: FRONTEND_PAYMENT_INTEGRATION_GUIDE.md
+        ↓
+        Follow the step-by-step implementation
+        ↓
+        Copy the JavaScript code examples
+        ↓
+        Integrate with your frontend
+        ↓
+        Test with Razorpay test cards
+        ↓
+        Deploy! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Created: July 19, 2026
+Status: ✅ READY FOR FRONTEND INTEGRATION
