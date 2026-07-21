@@ -1,8 +1,6 @@
 # Zomato-Backend
 Backend service for a modern e-commerce application developed using Java, Spring Boot, Hibernate, Spring Data JPA, and MySQL. Implements authentication, authorization, product management, cart, wishlist, order management, and clean layered architecture for scalable development.
-# Zentro Backend 🚀
 
-A scalable and secure **Spring Boot REST API** for an E-Commerce application. This backend provides APIs for user authentication, product management, shopping cart, wishlist, order processing, address management, and category management.
 
 ---
 
