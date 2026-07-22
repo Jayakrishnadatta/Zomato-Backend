@@ -57,8 +57,8 @@ public class User {
 	    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
 	    private List<Review> review;
 	    
-	    @OneToOne(mappedBy = "user",cascade = CascadeType.ALL)
-	    private Whishlist whishList;
+	    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+	    private List<Whishlist> whishList;
 	    
 	    
 	    
@@ -92,11 +92,11 @@ public class User {
 			this.review = review;
 		}
 
-		public Whishlist getWhishList() {
+		public List<Whishlist> getWhishList() {
 			return whishList;
 		}
 
-		public void setWhishList(Whishlist whishList) {
+		public void setWhishList(List<Whishlist> whishList) {
 			this.whishList = whishList;
 		}
 

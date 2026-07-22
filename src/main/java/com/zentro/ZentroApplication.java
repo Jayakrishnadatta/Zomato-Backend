@@ -9,6 +9,7 @@ public class ZentroApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ZentroApplication.class, args);
+		System.out.println("application started1");
 		System.out.print("application started");
 	}
 

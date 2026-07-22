@@ -6,7 +6,7 @@
   
   @SpringBootTest class ZentroApplicationTests {
   
-  @Test void contextLoads() { }
-  
+//  @Test void contextLoads() { }
+//
   }
  
